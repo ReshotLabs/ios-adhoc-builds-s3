@@ -134,22 +134,86 @@ function extension(buf: Buffer) {
 }
 
 function landing(data: AppDetails[], rootUrl: string) {
-  const items = data.map((options) => {
-    const maybeImage = options.urls.icon ? `<img width=90 height=90 src="${options.urls.icon}" /> ` : "";
+  const renderItem = (options: AppDetails) => {
+    const maybeImage = options.urls.icon ? `<img width=120 height=120 src="${options.urls.icon}" class="app-icon" /> ` : "";
     const href = options.urls.manifest ? link(options.urls.manifest) : options.urls.abi;
     return `
-<a href="${href}">
+<a href="${href}" class="app-link">
   ${maybeImage}
-  <span class="caption">Install <span class="title">${options.appTitle}</span> (${options.bundleMarketingVersion} / ${options.bundleVersion})</span>
-  <div><span class="file">${options.appFile}</span></div>
+  <div class="app-title">${options.appTitle} v${options.bundleMarketingVersion} (${options.bundleVersion})</div>
 </a>`.trim();
-  });
+  };
+
+  const content = data.length === 1 
+    ? renderItem(data[0])
+    : `<ul>${data.map(item => `<li>${renderItem(item)}</li>`).join("")}</ul>`;
+
   return `
-<div>
-  <a href="${rootUrl}"><img src="${qr(rootUrl, 200)}" />
-  Scan the QR to open this page on a mobile device.
-</a></div>
-<ul>${items.map((html) => `<li>${html}</li>`).join("")}</ul>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .app-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      margin: 20px 0;
+    }
+    
+    .app-icon {
+      border-radius: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .app-title {
+      color: #111111;
+      font-weight: 500;
+      font-size: 1.2rem;
+      margin-top: 16px;
+      text-align: center;
+    }
+    
+    .qr-container {
+      text-align: center;
+      margin-top: auto;
+      padding: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .qr-container {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    ${content}
+  </div>
+  <div class="qr-container">
+    <img src="${qr(rootUrl, 200)}" />
+  </div>
+</body>
+</html>
 `.trim();
 }
 
